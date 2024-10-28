@@ -7,7 +7,7 @@ const app = express();
 
 // Basic Configuration
 const port = process.env.PORT || 3000;
-const urlDB = {}
+let urlDB = {}
 
 app.use(cors());
 app.use(bodyParser.json())
@@ -25,23 +25,23 @@ app.get('/api/hello', function(req, res) {
 });
 
 app.post('/api/shorturl', function(req, res, next){
-  let longurl = req.body
-  console.log(longurl)
-  res.send(longurl)
-  // dns.lookup(longurl, (err, address, family) => {
-  //   if(err){
-  //     res.json({error: 'invalid url'})
-  //   }else{
-  //     let urlId = Math.floor(Math.random() * 1000)
-  //     urlDB[urlId] = longurl;
-  //     res.json({original_url: longurl, short_url: urlId})
-  //   }
-  // });
+  let longurl = req.body['url']
+  let hostname = new URL(longurl).hostname
+  dns.lookup(hostname, (err, address, family) => {
+    if(err){
+      console.log(err)
+      res.json({error: 'invalid url'})
+    }else{
+      let urlId = Math.floor(Math.random() * 1000)
+      urlDB = {id: `${urlId}`, url: longurl}
+      res.json({original_url: longurl, short_url: urlId})
+    }
+  });
 })
 
-app.get('/api/shorturl/:urlId', (req, res) => {
-  if(req.params.urlId === Object.keys(urlDB)[0]){
-    res.redirect(urlDB['urlId'])
+app.get('/api/shorturl/:urlId', (req, res, next) => {
+  if(req.params.urlId === urlDB.id){
+    res.redirect(urlDB.url)
   }else{
     res.json({error: 'invalid url'})
   }
